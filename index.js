@@ -8,54 +8,74 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 
-// Simple route for root to test server
+// Root route to confirm server is alive
 app.get('/', (req, res) => {
-  res.send('Server is running!');
+  res.send('🚀 Paystack server is running!');
 });
 
-// Route to initialize payment
-app.post('/initialize-payment', (req, res) => {
+// Payment initialization route
+app.post('/initialize-payment', async (req, res) => {
   const { amount, email } = req.body;
 
-  // Adjusted to handle USD correctly (not multiplying by 100)
-  paystack.transaction.initialize({
-    amount: Math.round(amount * 100), // amount in cents (USD)
-    email: email,
-    currency: 'USD', // Set the currency to USD
-    callback_url: process.env.PAYSTACK_CALLBACK_URL,
-  })
-    .then(response => res.json(response))
-    .catch(error => res.status(500).json({ error: error.message }));
-});
+  console.log("📥 Payment request received:", req.body);
 
-// Route to handle Paystack's callback
-app.post('/paystack-callback', (req, res) => {
-  const { reference } = req.body.data;
+  // Basic validation
+  if (!amount || !email) {
+    console.error("❌ Missing 'amount' or 'email' in request body");
+    return res.status(400).json({ error: "Missing 'amount' or 'email'" });
+  }
 
-  // Verify the payment status
-  paystack.transaction.verify(reference)
-    .then(response => {
-      if (response.data.status === 'success') {
-        // Handle successful payment
-        console.log('Payment successful');
-      } else {
-        // Handle failed payment
-        console.log('Payment failed');
-      }
-      res.send('OK');
-    })
-    .catch(error => {
-      console.error('Error verifying payment:', error);
-      res.status(500).send('Internal Server Error');
+  try {
+    const response = await paystack.transaction.initialize({
+      amount: Math.round(amount * 100), // Convert dollars to cents
+      email,
+      currency: 'USD',
+      callback_url: process.env.PAYSTACK_CALLBACK_URL || 'https://your-callback-url.com',
     });
+
+    console.log("✅ Paystack response:", response);
+
+    res.json({
+      status: response.status,
+      message: response.message,
+      data: {
+        link: response.data.authorization_url,
+      },
+    });
+
+  } catch (error) {
+    console.error("🔥 Paystack initialization failed:", error);
+    res.status(500).json({ error: error.message || 'Something went wrong with Paystack' });
+  }
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// Paystack callback route (optional use)
+app.post('/paystack-callback', async (req, res) => {
+  const reference = req.body?.data?.reference;
+
+  if (!reference) {
+    return res.status(400).send('Missing payment reference');
+  }
+
+  try {
+    const response = await paystack.transaction.verify(reference);
+
+    if (response.data.status === 'success') {
+      console.log('✅ Payment successful:', reference);
+      // You can reward the user here
+    } else {
+      console.log('❌ Payment failed or incomplete:', reference);
+    }
+
+    res.send('OK');
+
+  } catch (error) {
+    console.error('🔥 Error verifying payment:', error);
+    res.status(500).send('Error verifying payment');
+  }
 });
 
-// Start the server
+// Start server
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`🌐 Server running on port ${port}`);
 });
