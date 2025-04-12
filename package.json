@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "express": "^5.1.0",
+    "paystack-api": "^2.0.6"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
