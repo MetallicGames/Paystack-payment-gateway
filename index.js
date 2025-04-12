@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const paystack = require('paystack-api')(process.env.PAYSTACK_SECRET_KEY);
@@ -8,6 +7,11 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
+
+// Simple route for root to test server
+app.get('/', (req, res) => {
+  res.send('Server is running!');
+});
 
 // Route to initialize payment
 app.post('/initialize-payment', (req, res) => {
@@ -44,6 +48,11 @@ app.post('/paystack-callback', (req, res) => {
       console.error('Error verifying payment:', error);
       res.status(500).send('Internal Server Error');
     });
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
 
 // Start the server
