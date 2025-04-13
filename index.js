@@ -27,7 +27,8 @@ app.post('/initialize-payment', async (req, res) => {
 
   try {
     const response = await paystack.transaction.initialize({
-      amount: Math.round(amount * 100), // Convert dollars to cents
+     amount: Math.round(amount), // ✅ Leave as-is because Unity already sent it in kobo
+
       email,
       currency: 'NGN',
       callback_url: process.env.PAYSTACK_CALLBACK_URL || 'https://your-callback-url.com',
