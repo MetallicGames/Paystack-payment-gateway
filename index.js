@@ -29,7 +29,7 @@ app.post('/initialize-payment', async (req, res) => {
     const response = await paystack.transaction.initialize({
       amount: Math.round(amount * 100), // Convert dollars to cents
       email,
-      currency: 'USD',
+      currency: 'NGN',
       callback_url: process.env.PAYSTACK_CALLBACK_URL || 'https://your-callback-url.com',
     });
 
